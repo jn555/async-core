@@ -44,16 +44,29 @@ defproc decode
                     wr_r := true
             ];
             
-            //same among all insn types
-            opcode!key;
-            rd!i{11..7};
-            rs1!rs1_r;
-            rs2!rs2_r;
-            funct3!i{14..12};
-            funct7!i{31..25};
-            shamt!i{24..20};
-            imm!imm_r;
-            wr!wr_r
+            //logging
+            log("Opcode: ", key);
+            log("rd: ", i{11..7});
+            log("rs1: ", rs1_r);
+            log("rs2: ", rs2_r);
+            log("funct3: ", i{14..12});
+            log("funct7: ", i{31..25});
+            log("shamt: ", i{24..20});
+            log("imm: ", imm_r);
+            log("wr: ", wr_r);
+
+            //rendezvous outputs
+            (
+                rs1!rs1_r,
+                rs2!rs2_r,
+                imm!imm_r,
+                opcode!key,
+                rd!i{11..7},
+                funct3!i{14..12},
+                funct7!i{31..25},
+                shamt!i{24..20},
+                wr!wr_r
+            )
         ]
     }
 }

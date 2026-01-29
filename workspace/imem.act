@@ -38,8 +38,10 @@ defproc imem
         */
 
         *[
-            addr?a;
-            read?r;
+            (
+            addr?a,
+            read?r
+            );
 
             [ r -> 
                 [ (a >= 0) & (a <= 9) -> out := mem[a]
@@ -48,7 +50,9 @@ defproc imem
                 insn!out
             [] ~r ->
                 insn!0x00000000
-            ]
+            ];
+
+            log("Insn: ", out)
         ]
     }
 }

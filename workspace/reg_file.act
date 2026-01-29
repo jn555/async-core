@@ -3,38 +3,45 @@
 
 defproc reg_file 
 (
-    chan?(int<5>) addr_rs1, addr_rs2;
-    chan!(int<32>) data_rs1, data_rs2
+    chan?(int<5>) rs1, rs2;
+    chan!(int<32>) d1, d2
 )
 {
     int<32> regs [0..31]; //32 bit wide, depth of 10
     int<5> a1, a2;
-    int<32> d1, d2;
+    int<32> o1, o2;
     
     int i;
 
     chp {
         //initialize RF
-        i := 0;
-        *[ i < 32 ->
-            regs[i] := 0;
-            i := i + 1
-        ];
+        regs[0] := 1;
+        regs[1] := 2;
+        regs[2] := 3;
+        regs[3] := 4;
 
         *[
-            addr_rs1?a1;
-            addr_rs2?a2;
+            //rendezvous inputs
+            (
+            rs1?a1,
+            rs2?a2
+            );
            
-            [ a1 = 0 -> d1 := 0
-            [] else -> d1 := regs[a1]
+            [ a1 = 0 -> o1 := 0
+            [] else -> o1 := regs[a1]
             ];
 
-            [ a2 = 0 -> d2 := 0
-            [] else -> d2 := regs[a2]
+            [ a2 = 0 -> o2 := 0
+            [] else -> o2 := regs[a2]
             ];
 
-            data_rs1!d1;
-            data_rs2!d2
+            log("RF Data: ", o1, "  ", o2);
+
+            //rendezvous outputs
+            (
+            d1!o1,
+            d2!o2
+            )
         ]
     }
 }

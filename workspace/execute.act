@@ -26,13 +26,15 @@ defproc execute
     chp {
         *[
             //rendezvous inputs
-            immed?imm;
-            d1?a;
-            d2?b;
-            opcode?op;
-            funct3?f3;
-            funct7?f7;
-            shamt?sham;
+            (
+            immed?imm,
+            d1?a,
+            d2?b,
+            opcode?op,
+            funct3?f3,
+            funct7?f7,
+            shamt?sham
+            );
             
             //defaults
             res := 0;
@@ -76,6 +78,7 @@ defproc execute
                 []  else -> res := 0
             ];
 
+            log("Alu res: ", res);
             out!res
         ]
     }
