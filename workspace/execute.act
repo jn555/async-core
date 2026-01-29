@@ -1,0 +1,82 @@
+//execute.act
+
+defproc execute
+(
+    chan?(int<32>) immed;
+    chan?(int<32>) d1, d2;
+    chan?(int<7>) opcode;
+    chan?(int<3>) funct3;
+    chan?(int<7>) funct7;
+    chan?(int<5>) shamt;
+    chan!(int<32>) out
+)
+{
+    int<32> res;
+
+    int<32> imm;
+    int<32> a, b;
+    int<7> op;
+    int<3> f3;
+    int<7> f7;
+    int<5> sh;
+    int<5> sham;
+
+    bool sub;
+
+    chp {
+        *[
+            //rendezvous inputs
+            immed?imm;
+            d1?a;
+            d2?b;
+            opcode?op;
+            funct3?f3;
+            funct7?f7;
+            shamt?sham;
+            
+            //defaults
+            res := 0;
+            sub := (f7{5} = 1);
+            sh  := b{4..0};
+
+            //match & execute
+            [
+                op = 0b0110011 ->
+                    [
+                        f3 = 0b000 -> //ADD/SUB
+                            [ sub -> res := a - b
+                            [] ~sub  -> res := a + b
+                            ]
+                        [] f3 = 0b001 -> res := a << sh //SLL
+                        [] f3 = 0b010 -> res := 0 //TODO: SLT
+                        [] f3 = 0b011 -> res := 0 //TODO: SLTU
+                        [] f3 = 0b100 -> res := a ^ b //XOR
+                        [] f3 = 0b101 -> res := 0 // TODO: SRL/SRA
+                        [] f3 = 0b110 -> res := a | b //OR
+                        [] f3 = 0b111 -> res := a & b
+                        [] else -> res := 0
+                    ]
+                []  op=0b0010011 ->
+                    [
+                        f3 = 0b000 -> res := a + imm //ADDI
+                        [] f3 = 0b010 -> res := 0 //TODO: SLTI
+                        [] f3 = 0b011 -> res := 0 //TODO: SLTIU
+                        [] f3 = 0b100 -> res := a ^ imm //XORI
+                        [] f3 = 0b110 -> res := a | imm //ORI
+                        [] f3 = 0b111 -> res := a & imm // ANDI
+                        [] f3 = 0b001 -> res := a << sham //SLLI
+                        [] f3 = 0b101 -> //SRLI/SRAI
+                            [ sub -> res := a >>> sham
+                            [] ~sub -> res := a >>> sham
+                            ]
+                        [] else -> res := 0
+                    ]
+                []  op=0b0000011 -> res := a + imm //Load
+                []  op=0b0100011 -> res := a + imm //Store
+                []  else -> res := 0
+            ];
+
+            out!res
+        ]
+    }
+}

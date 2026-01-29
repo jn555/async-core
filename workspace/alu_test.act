@@ -1,0 +1,53 @@
+// test_alu.act
+import "alu.act";
+
+defproc alu_source (chan!(int<2>) cmd; chan!(int) X, Y)
+{
+    int i;
+    int x;
+    int y;
+    int<2> c;
+
+    chp {
+        // fixed operands
+        x := 0;
+        log("x is: ", x);
+        y := 5;
+
+        // try all 4 ops: 0 add, 1 sub, 2 and, 3 or
+        i := 0;
+        *[
+            i < 4 ->
+                c := i;        // i is 0..3, fits in int<2>
+                X!x, Y!y, cmd!c;
+                i := i + 1
+        ]
+    }
+}
+
+defproc alu_sink (chan?(int) O)
+{
+    int out;
+
+    chp {
+        *[
+            O?out;
+            log("O = ", out)
+        ]
+    }
+}
+
+defproc test()
+{
+    alu u;
+    alu_source s;
+    alu_sink k;
+
+    // wire source to alu inputs
+    u.cmd = s.cmd;
+    u.X   = s.X;
+    u.Y   = s.Y;
+
+    // wire alu output to sink
+    u.O = k.O;
+}

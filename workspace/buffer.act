@@ -1,0 +1,10 @@
+// buffer.act
+// One-place FIFO buffer in CHP
+
+defproc buffer (chan?(int) L; chan!(int) R)
+{
+    int x;
+    chp {
+        *[ L?x; R!x ]
+    }
+}

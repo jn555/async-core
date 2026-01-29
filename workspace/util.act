@@ -1,0 +1,43 @@
+// util.act
+
+template<pint W>
+defproc fork (chan?(int<W>) I; chan!(int<W>) A; chan!(int<W>) B)
+{
+    int<W> t;
+    chp {
+        *[
+            I?t;
+            A!t;
+            B!t
+        ]
+    }
+}
+
+defproc fork_bool (chan?(bool) I; chan!(bool) A; chan!(bool) B)
+{
+    bool t;
+    chp {
+        *[
+            I?t;
+            A!t;
+            B!t
+        ]
+    }
+}
+
+
+/*
+template<pint W>
+defproc fork3 (chan?(int<W>) I; chan!(int<W>) A; chan!(int<W>) B, chan!(int<W>) C)
+{
+    int<W> t;
+    chp {
+        *[
+            I?t;
+            A!t;
+            B!t;
+            C!t
+        ]
+    }
+}
+*/

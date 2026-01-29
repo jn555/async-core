@@ -1,0 +1,59 @@
+//decode.act
+
+defproc decode 
+(
+    chan?(int<32>) insn; 
+    chan!(int<7>) opcode; 
+    chan!(int<5>) rd, rs1, rs2; 
+    chan!(int<3>) funct3; 
+    chan!(int<7>) funct7; 
+    chan!(int<32>) imm; 
+    chan!(int<5>) shamt;
+    chan!(bool) wr
+)
+{
+    int<32> i;
+    
+    int<7> key;
+    int<32> imm_r;
+    int<5> rs1_r, rs2_r;
+    bool wr_r;
+
+    chp {
+        *[
+            insn?i;
+            
+            key := i{6..0}; //local alias for opcode bits
+
+            //defaults
+            imm_r := 0x00000000;
+            rs1_r := 0b00000;
+            rs2_r := 0b00000;
+            wr_r  := false;
+
+            [
+                key = 0b0010011 -> //I-type
+                    rs1_r := i{19..15};
+                    rs2_r := 0b00000;
+                    imm_r := (i & 0xfff00000) >>> 20;
+                    wr_r := true
+            []  key = 0b0110011 -> //R-type
+                    rs1_r := i{19..15};
+                    rs2_r := i{24..20};
+                    imm_r := 0x00000000;
+                    wr_r := true
+            ];
+            
+            //same among all insn types
+            opcode!key;
+            rd!i{11..7};
+            rs1!rs1_r;
+            rs2!rs2_r;
+            funct3!i{14..12};
+            funct7!i{31..25};
+            shamt!i{24..20};
+            imm!imm_r;
+            wr!wr_r
+        ]
+    }
+}

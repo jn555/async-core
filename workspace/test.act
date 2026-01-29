@@ -1,0 +1,21 @@
+/* my first act program */
+defchan a1of2 <: chan(bool) (bool d0,d1,a)
+{
+  spec {
+    exclhi(d0,d1)  // exclusive high directive
+  }
+  // channel description omitted
+}
+ 
+defproc bitbucket (a1of2 d)
+{
+  prs {
+    d.d0 | d.d1  -> d.a+
+   ~d.d0 & ~d.d1 -> d.a-
+  }
+}
+ 
+bitbucket b;
+a1of2 c;
+ 
+b.d = c;

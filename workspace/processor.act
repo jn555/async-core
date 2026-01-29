@@ -1,0 +1,177 @@
+// test_alu.act
+import "imem.act";
+import "decode.act";
+import "util.act";
+import "reg_file.act";
+import "execute.act";
+
+defproc imem_source (chan!(int<32>) ADDR; chan!(bool) R)
+{
+    int<32> a;
+    bool rd;
+    int i;
+
+    chp {
+        rd := true;
+        a := 0;
+
+        *[
+            i < 2 ->
+                ADDR!a;
+                R!rd;
+                log("pc = ", a);
+                a := a + 1;
+                i := i + 1
+        ]
+    }
+}
+
+defproc imem_sink (chan?(int<32>) I)
+{
+    int<32> out;
+
+    chp {
+        *[
+            I?out;
+            log("insn = ", out)
+        ]
+    }
+}
+
+defproc decode_sink (
+    chan?(int<7>) opcode; 
+    chan?(int<5>) rd, rs1, rs2; 
+    chan?(int<3>) funct3; 
+    chan?(int<7>) funct7; 
+    chan?(int<32>) imm;
+    chan?(int<5>) shamt;
+    chan?(bool) wr
+)
+{
+    int<7> opcode_d;
+    int<5> rd_d, rs1_d, rs2_d;
+    int<3> funct3_d;
+    int<7> funct7_d;
+    int<32> imm_d;
+    int<5> shamt_d;
+    bool wr_d;
+
+    chp {
+        *[
+            opcode?opcode_d;
+            rd?rd_d;
+            rs1?rs1_d;
+            rs2?rs2_d;
+            funct3?funct3_d;
+            funct7?funct7_d;
+            imm?imm_d;
+            shamt?shamt_d;
+            wr?wr_d;
+            
+            log("opcode = ", opcode_d);
+            log("rd     = ", rd_d);
+            log("rs1    = ", rs1_d);
+            log("rs2    = ", rs2_d);
+            log("funct3 = ", funct3_d);
+            log("funct7 = ", funct7_d);
+            log("imm    = ", imm_d);
+            log("shamt    = ", shamt_d);
+            log("wr     = ", wr_d)
+        ]
+    }
+}
+
+
+defproc execute_sink (
+    chan?(int<32>) result
+)
+{
+    int<32> res;
+
+    chp {
+        *[
+            result?res;
+            log("result = ", res)
+        ]
+    }
+}
+
+
+defproc test()
+{
+    imem m;
+    imem_source s;
+    imem_sink k;
+
+    // wire source to imem inputs
+    m.addr = s.ADDR;
+    m.read   = s.R;
+
+    // wire imem output to sink
+    //m.insn = k.I;
+
+    //decode stage
+    decode d;
+    decode_sink dec_sink;
+    fork<32> fork_insn;
+
+    fork_insn.I = m.insn;
+    fork_insn.A = k.I;
+    fork_insn.B = d.insn;
+
+    fork<7> fork_opcode;
+    fork<5> fork_rd, fork_rs1, fork_rs2;
+    fork<3> fork_funct3;
+    fork<7> fork_funct7;
+    fork<32> fork_imm;
+    fork<5> fork_shamt;
+    fork_bool fork_wr;
+
+    //reg file
+    reg_file rf;
+
+    fork_rs1.I = d.rs1;
+    fork_rs1.A = dec_sink.rs1;
+    fork_rs1.B = rf.addr_rs1; //ex rs1
+
+    fork_rs2.I = d.rs2;
+    fork_rs2.A = dec_sink.rs2;
+    fork_rs2.B = rf.addr_rs2; //ex rs2
+
+    //execute stage
+    execute alu;
+    execute_sink ex_sink;
+
+    fork_opcode.I = d.opcode;
+    fork_opcode.A = dec_sink.opcode;
+    fork_opcode.B = alu.opcode;
+
+    // fork_rd.I = d.rd;
+    // fork_rd.A = dec_sink.rd;
+    //fork_rd.B = ; //ex rd
+ 
+    fork_funct3.I = d.funct3;
+    fork_funct3.A = dec_sink.funct3;
+    fork_funct3.B = alu.funct3;
+
+    fork_funct7.I = d.funct7;
+    fork_funct7.A = dec_sink.funct7;
+    fork_funct7.B = alu.funct7;
+
+    fork_imm.I = d.imm;
+    fork_imm.A = dec_sink.imm;
+    fork_imm.B = alu.immed;
+
+    fork_shamt.I = d.shamt;
+    fork_shamt.A = dec_sink.shamt;
+    fork_shamt.B = alu.shamt;
+
+    fork_wr.I = d.wr;
+    fork_wr.A = dec_sink.wr;
+    //fork_wr.B = ; //ex wr
+
+    alu.d1 = rf.data_rs1;
+    alu.d2 = rf.data_rs2;
+
+    ex_sink.result = alu.out;
+}

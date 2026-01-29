@@ -1,0 +1,47 @@
+// test_alu.act
+import "imem.act", "decode.act";
+
+defproc imem_source (chan!(int<32>) ADDR; chan!(bool) R)
+{
+    int<32> a;
+    bool rd;
+
+    chp {
+        rd := true;
+        a := 5;
+
+        log("read is: ", rd);
+        log("addr is: ", a);
+
+        //*[
+        ADDR!a;
+        R!rd
+        //]
+    }
+}
+
+defproc imem_sink (chan?(int<32>) I)
+{
+    int<32> out;
+
+    chp {
+        *[
+            I?out;
+            log("insn = ", out)
+        ]
+    }
+}
+
+defproc test()
+{
+    imem m;
+    imem_source s;
+    imem_sink k;
+
+    // wire source to imem inputs
+    m.addr = s.ADDR;
+    m.read   = s.R;
+
+    // wire imem output to sink
+    m.insn = k.I;
+}
