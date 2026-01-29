@@ -4,13 +4,11 @@
 defproc imem 
 (
     chan?(int<32>) addr; 
-    chan?(bool) read; 
     chan!(int<32>) insn
 )
 {
     int<32> mem [0..9]; //32 bit wide, depth of 10
     int<32> a; //addr local var
-    bool r; //read local var
     int<32> out;
 
     chp {
@@ -36,21 +34,16 @@ defproc imem
             imm    = 5
             wr     = 1
         */
-
+        mem[2] := 0x00118213;
+        //addi x4, x3, 1
         *[
-            (
-            addr?a,
-            read?r
-            );
+            addr?a;
 
-            [ r -> 
-                [ (a >= 0) & (a <= 9) -> out := mem[a]
-                [] else -> out := 0
-                ];
-                insn!out
-            [] ~r ->
-                insn!0x00000000
+            [ (a >= 0) & (a <= 9) -> out := mem[a]
+            [] else -> out := 0x00000000
             ];
+
+            insn!out;
 
             log("Insn: ", out)
         ]

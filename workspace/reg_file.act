@@ -4,13 +4,19 @@
 defproc reg_file 
 (
     chan?(int<5>) rs1, rs2;
-    chan!(int<32>) d1, d2
+    chan!(int<32>) d1, d2;
+
+    chan?(int<5>) wb_addr;
+    chan?(int<32>) wb_data
 )
 {
     int<32> regs [0..31]; //32 bit wide, depth of 10
     int<5> a1, a2;
     int<32> o1, o2;
     
+    int<5> wb_a;
+    int<5> wb_d;
+
     int i;
 
     chp {
@@ -21,6 +27,7 @@ defproc reg_file
         regs[3] := 4;
 
         *[
+            //READ
             //rendezvous inputs
             (
             rs1?a1,
@@ -41,7 +48,19 @@ defproc reg_file
             (
             d1!o1,
             d2!o2
-            )
+            );
+
+            //WRITE
+            (
+            wb_addr?wb_a,
+            wb_data?wb_d
+            );
+
+            [ wb_a != 0 -> regs[wb_a] := wb_d
+            [] else -> skip //do nothing
+            ];
+
+            log("WB Complete: x", wb_a, " = ", wb_d)
         ]
     }
 }

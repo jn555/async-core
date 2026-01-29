@@ -5,20 +5,18 @@ import "util.act";
 import "reg_file.act";
 import "execute.act";
 
-defproc imem_source (chan!(int<32>) addr; chan!(bool) r)
+
+defproc pc_unit (chan!(int<32>) addr)
 {
     int<32> a;
-    bool rd;
     int i;
 
     chp {
-        rd := true;
         a := 0;
 
         *[
-            i < 2 ->
+            i < 3 ->
                 addr!a;
-                r!rd;
                 log("pc = ", a);
                 a := a + 1;
                 i := i + 1
@@ -26,14 +24,14 @@ defproc imem_source (chan!(int<32>) addr; chan!(bool) r)
     }
 }
 
+
 defproc test()
 {
     imem m;
-    imem_source s;
+    pc_unit s;
 
     // wire source to imem inputs
     m.addr = s.addr;
-    m.read   = s.r;
 
     //decode stage
     decode d;
@@ -50,10 +48,13 @@ defproc test()
     alu.d2 = rf.d2;
     alu.immed = d.imm;  
     alu.opcode = d.opcode;
-    sink<5> sink_rd; sink_rd.I = d.rd;
+    alu.rd = d.rd; //buffer this with rest
     alu.funct3 = d.funct3;
     alu.funct7 = d.funct7;
     alu.shamt = d.shamt;
     sink_bool sink_wr; sink_wr.I = d.wr;
-    sink<32> sink_res; alu.out = sink_res.I;
+
+    //wb
+    rf.wb_addr = alu.rd_buf;
+    rf.wb_data = alu.out; //buffer this
 }

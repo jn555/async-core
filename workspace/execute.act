@@ -5,9 +5,11 @@ defproc execute
     chan?(int<32>) immed;
     chan?(int<32>) d1, d2;
     chan?(int<7>) opcode;
+    chan?(int<5>) rd; //buffered
     chan?(int<3>) funct3;
     chan?(int<7>) funct7;
     chan?(int<5>) shamt;
+    chan!(int<5>) rd_buf;
     chan!(int<32>) out
 )
 {
@@ -16,6 +18,7 @@ defproc execute
     int<32> imm;
     int<32> a, b;
     int<7> op;
+    int<5> wb; 
     int<3> f3;
     int<7> f7;
     int<5> sh;
@@ -31,6 +34,7 @@ defproc execute
             d1?a,
             d2?b,
             opcode?op,
+            rd?wb,
             funct3?f3,
             funct7?f7,
             shamt?sham
@@ -79,7 +83,11 @@ defproc execute
             ];
 
             log("Alu res: ", res);
-            out!res
+            
+            (
+            out!res,
+            rd_buf!wb
+            )
         ]
     }
 }
